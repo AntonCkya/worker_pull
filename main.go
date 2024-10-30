@@ -103,6 +103,11 @@ func worker_pool(f func([]interface{}) ([]interface{}, error), channel_buffer in
 					fmt.Println("WARNING deleted workers is more than exist, the remaining workers will be deleted on the next creation")
 				}
 			}
+		} else if command == "ext" {
+			close(Jobs)
+			close(Res)
+			close(Quit)
+			return
 		}
 	}
 }
