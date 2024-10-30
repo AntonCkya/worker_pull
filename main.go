@@ -99,7 +99,7 @@ func worker_pool(f func([]interface{}) ([]interface{}, error), channel_buffer in
 			for i := 0; i < delWorkers; i++ {
 				Quit <- true
 				currWorkers--
-				if currWorkers < 1 {
+				if currWorkers < 0 {
 					fmt.Println("WARNING deleted workers is more than exist, the remaining workers will be deleted on the next creation")
 				}
 			}
