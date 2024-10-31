@@ -40,13 +40,17 @@ func worker(id int, jobs <-chan Job, res chan<- Result, quit <-chan bool) {
 				time.Sleep(time.Second * 10)
 				continue
 			}
-			res <- Result{
+			select {
+			case res <- Result{
 				Value:    currRes,
 				Type:     reflect.TypeOf(currRes),
 				WorkerId: id,
 				JobId:    job.Id,
+			}:
+				time.Sleep(time.Second * 10)
+			default:
+				fmt.Println("Result channel is full, result not sended")
 			}
-			time.Sleep(time.Second * 10)
 		case <-quit:
 			return
 		}
@@ -79,12 +83,16 @@ func worker_pool(f func([]interface{}) ([]interface{}, error), channel_buffer in
 		if command == "job" {
 			var jobString string
 			fmt.Scan(&jobString)
-			Jobs <- Job{
+			select {
+			case Jobs <- Job{
 				Id:   jobId,
 				Job:  f,
 				Argv: append(make([]interface{}, 0), jobString),
+			}:
+				jobId++
+			default:
+				fmt.Println("Jobs channel is full, job not sended")
 			}
-			jobId++
 		} else if command == "add" {
 			var addWorkers int
 			fmt.Scan(&addWorkers)
@@ -97,10 +105,14 @@ func worker_pool(f func([]interface{}) ([]interface{}, error), channel_buffer in
 			var delWorkers int
 			fmt.Scan(&delWorkers)
 			for i := 0; i < delWorkers; i++ {
-				Quit <- true
-				currWorkers--
-				if currWorkers < 0 {
-					fmt.Println("WARNING deleted workers is more than exist, the remaining workers will be deleted on the next creation")
+				select {
+				case Quit <- true:
+					currWorkers--
+					if currWorkers < 0 {
+						fmt.Println("WARNING deleted workers is more than exist, the remaining workers will be deleted on the next creation")
+					}
+				default:
+					fmt.Println("Quit channel is full, job not sended")
 				}
 			}
 		} else if command == "ext" {
